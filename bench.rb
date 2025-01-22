@@ -140,10 +140,10 @@ trials = []
 while trials.length < trial_count
   progress_file.write("#{trials.length}/#{trial_count}\n")
   progress_file.flush
-  io_percent = 0
+  io_percent = 1
 
   trial = []
-  while io_percent < 10
+  while io_percent < 100
     io_fraction = io_percent / 100.0
     cpu_fraction = (100 - io_percent) / 100.0
 
