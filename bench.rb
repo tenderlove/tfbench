@@ -58,9 +58,10 @@ class CpuTimeWaster
 end
 
 def count_to(value)
-  GC.disable
-  (0..value).each { |i| i }
-  GC.enable
+  x = 0
+  while x < value
+    x += 1
+  end
 end
 
 def random_with_normal_distribution(mean, stddev)
