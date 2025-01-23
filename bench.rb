@@ -29,7 +29,7 @@ class CpuTimeWaster
     time_taken_ns = 0
     while time_taken_ns < 10 * 1000 * 1000
       start = now_ns
-      count_to(value)
+      count_to(value.to_i)
       time_taken_ns = now_ns - start
 
       @x_values << value
