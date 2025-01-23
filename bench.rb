@@ -125,23 +125,21 @@ def run_threads(schedules)
   threads.each(&:join)
 end
 
-#base_work_unit_ns = 5 * 1000 * 1000
-base_work_unit_ns = 20 * 1000 * 1000
+base_work_unit_ns = 5 * 1000 * 1000
 cpu_time_waster = CpuTimeWaster.new
 std_dev_fraction = 0.5
 
-
-printf "io_percent;thread_time;fiber_time\n"
-
-progress_file = File.open("progress.txt", "wb+")
+progress_file = STDERR
 
 trial_count = 10
-trials = []
+# Each index in the array corresponds to a percentage of time spent in IO
+thread_io_times = {}
+fiber_io_times = {}
 
-while trials.length < trial_count
-  progress_file.write("#{trials.length}/#{trial_count}\n")
+trial_count.times do |trial_number|
+  progress_file.write("#{trial_number}/#{trial_count}\n")
   progress_file.flush
-  io_percent = 1
+  io_percent = 90
 
   trial = []
   while io_percent < 100
@@ -166,39 +164,29 @@ while trials.length < trial_count
       }
     )
 
-    thread_times = 5.times.map do
+    5.times do
       thread_start = now_ns
       run_threads(schedules)
-      now_ns - thread_start
+      (thread_io_times[io_percent] ||= []) << (now_ns - thread_start)
     end
-    avg_thread_time = thread_times.sort[thread_times.length / 2]
 
-    fiber_times = 5.times.map do
+    5.times do
       fiber_start = now_ns
       run_fibers(schedules)
-      now_ns - fiber_start
+      (fiber_io_times[io_percent] ||= []) << (now_ns - fiber_start)
     end
-    avg_fiber_time = fiber_times.sort[fiber_times.length / 2]
 
-    trial << [io_percent, avg_thread_time, avg_fiber_time]
-
-    io_percent += 1
-  end
-
-  trials << trial
-end
-
-sum = trials[0].each_with_index do |_, index|
-  [index, 0, 0]
-end
-
-trials.each do |trial|
-  trial.each_with_index do |data, index|
-    sum[index][1] += data[1]
-    sum[index][2] += data[2]
+    io_percent += 5
   end
 end
 
-sum.each do |data|
-  printf "%f;%f;%f\n", data[0], data[1] / trials.length.to_f, data[2] / trials.length.to_f
+{thread: thread_io_times, fiber: fiber_io_times}.each do |desc, values|
+  File.open("#{desc}_times.csv", "w") do |f|
+    f.puts "io_pct, time"
+    values.each do |pct, times|
+      times.each do |time|
+        f.puts "%f, %f" % [pct, time]
+      end
+    end
+  end
 end
