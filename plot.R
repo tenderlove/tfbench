@@ -1,11 +1,28 @@
 ##
 # Graph results from work trials
-# $ Rscript plot.R
+# $ Rscript plot.R input.csv output.png
+#
+# You can filter the results too. Only io_pct greater than 80:
+#
+# $ Rscript plot.R input.csv output.png 80
+
+# io_pct greater than 50 but less than 70
+#
+# $ Rscript plot.R input.csv output.png 50 70
+
 argv <- commandArgs(trailingOnly = TRUE)
 
 records <- na.omit(read.csv(argv[1], header=TRUE, colClasses=c("factor", "numeric", "numeric"), stringsAsFactors=FALSE))
 
 colors <- rainbow(length(unique(records$strategy)), s = 0.5)
+
+if (length(argv) > 2) {
+  records <- records[records$io_pct > as.integer(argv[3]),];
+}
+
+if (length(argv) > 3) {
+  records <- records[records$io_pct < as.integer(argv[4]),];
+}
 
 # Convert time to ms
 ns_in_ms = 1000000
