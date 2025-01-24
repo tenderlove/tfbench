@@ -129,25 +129,20 @@ base_work_unit_ns = 5 * 1000 * 1000
 cpu_time_waster = CpuTimeWaster.new
 std_dev_fraction = 0.5
 
-progress_file = STDERR
-
 trial_count = 10
-# Each index in the array corresponds to a percentage of time spent in IO
 thread_io_times = {}
 fiber_io_times = {}
 
 trial_count.times do |trial_number|
-  progress_file.write("#{trial_number}/#{trial_count}\n")
-  progress_file.flush
-  io_percent = 90
+  puts("#{trial_number}/#{trial_count}\n")
+  io_percent = 1
 
   trial = []
   while io_percent < 100
     io_fraction = io_percent / 100.0
     cpu_fraction = (100 - io_percent) / 100.0
 
-    progress_file.write("\t#{io_percent}/100\n")
-    progress_file.flush
+    puts("\t#{io_percent}/100\n")
 
     schedules = gen_schedules(
       worker_count: 32,
@@ -176,16 +171,16 @@ trial_count.times do |trial_number|
       (fiber_io_times[io_percent] ||= []) << (now_ns - fiber_start)
     end
 
-    io_percent += 5
+    io_percent += 1
   end
 end
 
-{thread: thread_io_times, fiber: fiber_io_times}.each do |desc, values|
-  File.open("#{desc}_times.csv", "w") do |f|
-    f.puts "io_pct, time"
+File.open("records.csv", "w") do |f|
+  f.puts "strategy, io_pct, time"
+  {"Threads" => thread_io_times, "Fibers" => fiber_io_times}.each do |desc, values|
     values.each do |pct, times|
       times.each do |time|
-        f.puts "%f, %f" % [pct, time]
+        f.puts "%s, %f, %f" % [desc, pct, time]
       end
     end
   end
